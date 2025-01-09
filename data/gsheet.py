@@ -1,6 +1,7 @@
 import gspread
 from gspread.exceptions import WorksheetNotFound
 
+
 class GSheet:
     def __init__(self, spreadsheet_id: str, spreadsheet_page: str):
         self.client = gspread.service_account('credentials.json')
