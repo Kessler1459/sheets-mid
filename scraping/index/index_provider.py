@@ -6,7 +6,7 @@ class IndexProvider(ABC):
     indexes: dict[str, float]
     
     @abstractmethod
-    def __init__(self, searchs: Iterable):
+    def __init__(self, searchs: Iterable, *args):
         pass
 
     @abstractmethod
