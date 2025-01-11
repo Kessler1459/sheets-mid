@@ -21,7 +21,7 @@ GEMINI_MODEL= os.environ['GEMINI_MODEL']
 if not all((SPREADSHEET_ID, SPREADSHEET_PAGE, BINANCE_API_KEY, BINANCE_SECRET_KEY, BINANCE_ROOT_URL, GEMINI_KEY, GEMINI_MODEL)):
     raise EnvironmentError("Missing environment variables")
 
-rava = Rava()
+rava = Rava(searchs= ['ETH', 'BTC', 'METR', 'ARCO', 'AAPL', 'USD MEP'])
 dict_results = rava.update_values()
 gemini = Gemini(GEMINI_KEY, GEMINI_MODEL)
 gsheet = GSheet(SPREADSHEET_ID, SPREADSHEET_PAGE)
