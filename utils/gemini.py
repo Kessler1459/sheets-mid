@@ -17,24 +17,16 @@ class Gemini:
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(model)
 
-    def text_request(self, text: str) -> str | None:
-        try:
-            response = self.model.generate_content(text, generation_config={'temperature': 0.9})
-            Gemini._update_counter(response.usage_metadata.total_token_count)
-            return response.text
-        except Exception as e:
-            logger.error("Gemini error: %s", e)
+    def text_request(self, text: str) -> str:
+        response = self.model.generate_content(text, generation_config={'temperature': 0.9})
+        Gemini._update_counter(response.usage_metadata.total_token_count)
+        return response.text
 
-    def json_request(self, text: str) -> str | None:
+    def json_request(self, text: str) -> dict:
         context = "ONLY RESPONSE TO THIS WITH A JSON COMPATIBLE STRING, WITHOUT ANY CONTEXT TEXT:"
-        try:
-            response = self.model.generate_content(context + text, generation_config={'temperature': 0.9})
-            Gemini._update_counter(response.usage_metadata.total_token_count)
-            return json.loads(JSON_FORMAT.findall(JSON_CLEANUP.sub('',response.text))[0])
-        except (json.JSONDecodeError, IndexError):
-            logger.error("Gemini bad JSON")
-        except Exception as e:
-            logger.error("Gemini error: %s", e)
+        response = self.model.generate_content(context + text, generation_config={'temperature': 0.9})
+        Gemini._update_counter(response.usage_metadata.total_token_count)
+        return json.loads(JSON_FORMAT.findall(JSON_CLEANUP.sub('',response.text))[0])
 
     @classmethod
     def _update_counter(cls, tokens: int) -> None:
