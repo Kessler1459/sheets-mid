@@ -22,6 +22,6 @@ if not all((SPREADSHEET_ID, SPREADSHEET_PAGE, BINANCE_API_KEY, BINANCE_SECRET_KE
     raise EnvironmentError("Missing environment variables")
 
 rava = Rava()
-rava.get_avg_price()
-#gemini = Gemini(GEMINI_KEY, GEMINI_MODEL)
-#gsheet = GSheet(SPREADSHEET_ID, SPREADSHEET_PAGE)
+dict_results = rava.update_values()
+gemini = Gemini(GEMINI_KEY, GEMINI_MODEL)
+gsheet = GSheet(SPREADSHEET_ID, SPREADSHEET_PAGE)

@@ -1,38 +1,64 @@
 import re
 import json
-from typing import Iterable
+import time
+from typing import Iterable, Optional
 
 from bs4 import BeautifulSoup
 from utils.http import get_session
 from scraping.index.index_provider import IndexProvider
+from utils.logging_handler import get_logger
+
+logger = get_logger(__name__)
 
 
 class Rava(IndexProvider):
-    #def __init__(self, searchs: Iterable, base_url: str, api_key: str) -> None:
     def __init__(self) -> None:
-        self._base_url = 'https://www.rava.com/cotizaciones/dolares'
-        #self._searchs = searchs
+        self.base_url = 'https://www.rava.com/cotizaciones'
+        self.urls = {
+            f'{self.base_url}/dolares',
+            f'{self.base_url}/acciones-argentinas',
+            f'{self.base_url}/cripto',
+            f'{self.base_url}/cedears',
+            f'{self.base_url}/bonos',
+            f'{self.base_url}/opciones',
+            f'{self.base_url}/letras',
+            f'{self.base_url}/futuros',
+            f'{self.base_url}/mercados-globales'
+        }
         self._http = get_session()
-    
-    def _get_page(self, page: str):
-        pass
+
         
+    def _filter_dict(self, data: dict) -> dict:
+        result = {}
+        for key, value in data.items():
+            if isinstance(value, list):
+                result[key] = value
+        return result
 
-    def update_values(self) -> dict[str, float]:
-        response = self._http.get(
-                    f'{self._base_url}',
-                    #headers={'X-MBX-APIKEY': self._api_key},
-                    #params={'symbol': symbol.replace('/', '').upper()}
-                )
-        #self.indexes = {index: self.get_avg_price(index) for index in self._searchs}
-        return self.indexes
+    def update_values(self) -> dict[str, Optional[float]]:
+        tick = time.time()
+        results = {}
+        for url in self.urls:
+            data = self._get_avg_price(url)
+            if 'count' in data and not data['count']:
+                continue
+            filtered_data = self._filter_dict(data)
+            results.update({body[""]: (None if isinstance(body['ultimo'], str) else body['ultimo']) for symbol in filtered_data for body in filtered_data[symbol]})
+        logger.info(f'runtime update_values: {time.time()-tick}')
+        return results
 
-    def get_avg_price(self) -> float:
-        response = self._http.get(
-            f'{self._base_url}'
-        )
-        list_values = re.split(('&quot;:(.*])'),response.text)
-        raw_json = list_values[1].replace('&quot;', '"')
-        data = json.loads(raw_json)
-
-        return response.json()['price']
+    def _get_avg_price(self, url: str) -> dict:
+        response = self._http.get(url)
+        try:
+            list_values = re.split((':datos=\"(.*})'),response.text)
+            raw_json = list_values[1].replace('&quot;', '"')
+            data = json.loads(raw_json)
+            return data
+        except Exception as e:
+            logger.error(e)
+            return {
+                'body' : [],
+                'link' : '',
+                'count' : 0,
+                'exactime' : 0.0
+            }
