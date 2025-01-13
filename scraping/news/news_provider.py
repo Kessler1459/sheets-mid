@@ -10,5 +10,5 @@ class NewsProvider(ABC):
         pass
 
     @abstractmethod
-    def update_values(self) -> dict[str, str]:
+    def update_values(self) -> dict[str, dict]:
         pass
