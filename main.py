@@ -1,4 +1,6 @@
+import argparse
 import os
+import json
 
 from data.gsheet import GSheet
 from scraping.index.binance import Binance
@@ -23,11 +25,31 @@ GEMINI_MODEL= os.environ['GEMINI_MODEL']
 if not all((SPREADSHEET_ID, SPREADSHEET_PAGE, BINANCE_API_KEY, BINANCE_SECRET_KEY, BINANCE_ROOT_URL, GEMINI_KEY, GEMINI_MODEL)):
     raise EnvironmentError("Missing environment variables")
 
-gemini = Gemini(GEMINI_KEY, GEMINI_MODEL)
 
+parser = argparse.ArgumentParser(description="Scrap stocks, cryptos and indexes news, and generate insights")
+parser.add_argument('inputs', type=str, nargs='+', help="List of stocks, cryptos and indexes to search")
+parser.add_argument('--insights', type=str, nargs='+', default=None, help="List of stocks, cryptos and indexes to generate insights")
+args = parser.parse_args()
+symbol_inputs = args.inputs or []
+insight_inputs = args.insights or []
+
+# SYMBOL SCRAPING
+remaining_keys = set(symbol_inputs)
+indexes = {}
+for args, provider_class in (((), Rava), ((BINANCE_ROOT_URL,BINANCE_API_KEY), Binance)):
+    root_logger.info("Updating indexes for %s from %s", remaining_keys, provider_class.__name__)
+    provider_instance = provider_class(remaining_keys, *args)
+    values = provider_instance.update_values()
+    indexes.update({k: float(v) for k,v in values.items() if v})
+    remaining_keys -= set(values.keys())
+    if not remaining_keys:
+        break
+
+# INSIGHTS
+gemini = Gemini(GEMINI_KEY, GEMINI_MODEL)
 insights = {}
-remaining_keys = set(inputs)
-for news_source in (LaNacion, Investing,):
+remaining_keys = set(insight_inputs)
+for news_source in (Investing, ):
     root_logger.info("Updating news %s from %s", remaining_keys, news_source.__name__)
     source = news_source(remaining_keys)
     news = source.update_values()
@@ -47,9 +69,7 @@ for news_source in (LaNacion, Investing,):
         DATA:{json.dumps(news)}
     """
     res = gemini.json_request(prompt)
-    for k, insight in res.items():
-        if insight:
-            insights[k] = insight
+    insights.update({k: v for k, v in res if v})
     remaining_keys -= set(insights.keys())
     if not remaining_keys:
         break
