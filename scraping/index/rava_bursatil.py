@@ -10,7 +10,7 @@ from utils.logging_handler import get_logger
 logger = get_logger(__name__)
 
 class Rava(IndexProvider):
-    def __init__(self, searchs: Iterable) -> None:
+    def __init__(self, searchs: Iterable, *args) -> None:
         self.base_url = 'https://www.rava.com/cotizaciones'
         self.urls = {f'{self.base_url}/{page}' for page in ('dolares','acciones-argentinas','cripto','cedears','bonos','opciones','letras','futuros','mercados-globales')}
         self.searchs = searchs

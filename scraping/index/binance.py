@@ -19,6 +19,6 @@ class Binance(IndexProvider):
         response = self._http.get(
             self._base_url + '/api/v3/avgPrice',
             headers={'X-MBX-APIKEY': self._api_key},
-            params={'symbol': symbol.replace('/', '').upper()}
+            params={'symbol': symbol.upper() + 'USDT'}
         )
         return response.json()['price']
