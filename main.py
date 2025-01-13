@@ -36,14 +36,14 @@ insight_inputs = args.insights or []
 # SYMBOL SCRAPING
 remaining_keys = set(symbol_inputs)
 indexes = {}
-for args, provider_class in (((), Rava), ((BINANCE_ROOT_URL,BINANCE_API_KEY), Binance)):
-    root_logger.info("Updating indexes for %s from %s", remaining_keys, provider_class.__name__)
-    provider_instance = provider_class(remaining_keys, *args)
-    values = provider_instance.update_values()
-    indexes.update({k: float(v) for k,v in values.items() if v})
-    remaining_keys -= set(values.keys())
-    if not remaining_keys:
-        break
+# for args, provider_class in (((), Rava), ((BINANCE_ROOT_URL,BINANCE_API_KEY), Binance)):
+#     root_logger.info("Updating indexes for %s from %s", remaining_keys, provider_class.__name__)
+#     provider_instance = provider_class(remaining_keys, *args)
+#     values = provider_instance.update_values()
+#     indexes.update({k: float(v) for k,v in values.items() if v})
+#     remaining_keys -= set(values.keys())
+#     if not remaining_keys:
+#         break
 
 # INSIGHTS
 gemini = Gemini(GEMINI_KEY, GEMINI_MODEL)
