@@ -20,8 +20,25 @@ class LaNacion(NewsProvider):
 
     def update_values(self) -> dict[str, dict]:
         response = self._http.get(SEARCH_SITEMAP)
-        soup = BeautifulSoup(response.text, 'lxml')
+        soup = BeautifulSoup(response.text, 'html.parser')
         all_articles = soup.find_all('loc', text = re.compile('articles'))
+        notices_urls = set()
         for arcticles in all_articles:
-            soup = BeautifulSoup(self._http.get(arcticles.text).text, 'lxml')
-        return super().update_values()
+            soup = BeautifulSoup(self._http.get(arcticles.text).text, 'html.parser')
+            economy_notices = soup.find_all('loc', text = re.compile('/economia/'))
+            notices_urls.update(economy_notices)
+        for loc in notices_urls:
+            body = BeautifulSoup(self._http.get(loc.text).text, 'html.parser')
+            body = self.unify_body(body)
+            if not body:
+                raise ValueError('No vino el cuerpito.')
+            for index in self._searchs:
+                if re.search(r"\W?{}\W".format(index), body, re.IGNORECASE):
+                    self.news[index][loc.text] = body
+                if index in self.news and len(self.news[index]) == MAX_NEWS:
+                    break
+        return self.news
+
+    def unify_body(self, soup:BeautifulSoup) -> str | None:
+        body_note = soup.select_one('.cuerpo__nota').text
+        return body_note.split('Seguí leyendo')[0]
