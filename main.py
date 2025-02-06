@@ -27,8 +27,8 @@ if not all((CONFIG_SPREADSHEET, CONFIG_SS_PAGE, BINANCE_API_KEY, BINANCE_SECRET_
 config_gsheet = GSheet(CONFIG_SPREADSHEET, CONFIG_SS_PAGE, True)
 config_list = config_gsheet.read_config()
 
-symbol_inputs = {coin.upper() for item in config_list for coin in item['SYMBOLS'].split(',')}
-insight_inputs = {coin.upper() for item in config_list for coin in item['INSIGHTS'].split(',')}
+symbol_inputs = {coin.upper() for item in config_list for coin in item['SYMBOLS'].split(',') if coin}
+insight_inputs = {coin.upper() for item in config_list for coin in item['INSIGHTS'].split(',') if coin}
 
 # SYMBOL SCRAPING
 remaining_keys = set(symbol_inputs)

@@ -18,6 +18,8 @@ class GSheet:
             self.worksheet = self.sheet.add_worksheet(spreadsheet_page, 1000, 1000)
 
     def insert_table(self, value: dict) -> None:
+        if not value:
+            return
         total_inputs = len(value)
         actual_column = len(self.worksheet.row_values(1))+2
         start_letter = 'A' if actual_column == 2 else string.ascii_uppercase[actual_column]
