@@ -12,7 +12,7 @@
             "program": "${workspaceFolder}/main.py",
             "envFile": "${workspaceFolder}/.env",
             "console": "integratedTerminal",
-            "args": ["BTC", "ETH", "AXS", "METR", "--insights", "BTC"]
+            "args": ["BTC", "--insights", "BTC", "MORI", "YPFD"]
         }
     ]
 }

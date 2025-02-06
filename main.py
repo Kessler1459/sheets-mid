@@ -1,4 +1,3 @@
-import argparse
 import os
 import json
 
@@ -14,28 +13,27 @@ root_logger = get_logger()
 setup_logger(root_logger)
 
 
-SPREADSHEET_ID = os.environ['SPREADSHEET']
-SPREADSHEET_PAGE = os.environ['SPREADSHEET_PAGE']
 BINANCE_API_KEY = os.environ['BINANCE_API_KEY']
 BINANCE_SECRET_KEY = os.environ['BINANCE_SECRET_KEY']
 BINANCE_ROOT_URL = os.environ['BINANCE_ROOT_URL']
 GEMINI_KEY = os.environ['GEMINI_KEY']
-GEMINI_MODEL= os.environ['GEMINI_MODEL']
+GEMINI_MODEL = os.environ['GEMINI_MODEL']
+CONFIG_SPREADSHEET = os.environ['CONFIG_SPREADSHEET']
+CONFIG_SS_PAGE = os.environ['CONFIG_SS_PAGE']
 
-if not all((SPREADSHEET_ID, SPREADSHEET_PAGE, BINANCE_API_KEY, BINANCE_SECRET_KEY, BINANCE_ROOT_URL, GEMINI_KEY, GEMINI_MODEL)):
+if not all((CONFIG_SPREADSHEET, CONFIG_SS_PAGE, BINANCE_API_KEY, BINANCE_SECRET_KEY, BINANCE_ROOT_URL, GEMINI_KEY, GEMINI_MODEL)):
     raise EnvironmentError("Missing environment variables")
 
+config_gsheet = GSheet(CONFIG_SPREADSHEET, CONFIG_SS_PAGE, True)
+config_list = config_gsheet.read_config()
 
-parser = argparse.ArgumentParser(description="Scrap stocks, cryptos and indexes news, and generate insights")
-parser.add_argument('inputs', type=str, nargs='+', help="List of stocks, cryptos and indexes to search")
-parser.add_argument('--insights', type=str, nargs='+', default=None, help="List of stocks, cryptos and indexes to generate insights")
-args = parser.parse_args()
-symbol_inputs = args.inputs or []
-insight_inputs = args.insights or []
+symbol_inputs = {coin.upper() for item in config_list for coin in item['SYMBOLS'].split(',')}
+insight_inputs = {coin.upper() for item in config_list for coin in item['INSIGHTS'].split(',')}
 
 # SYMBOL SCRAPING
 remaining_keys = set(symbol_inputs)
 indexes = {}
+
 for args, provider_class in (((), Rava), ((BINANCE_ROOT_URL,BINANCE_API_KEY), Binance)):
     root_logger.info("Updating indexes for %s from %s", remaining_keys, provider_class.__name__)
     provider_instance = provider_class(remaining_keys, *args)
@@ -69,11 +67,14 @@ for news_source in (Investing, LaNacion):
         DATA:{json.dumps(news)}
     """
     res = gemini.json_request(prompt)
-    insights.update({k: v for k, v in res if v})
+    insights.update({k: v for k, v in res.items() if v})
     remaining_keys -= set(insights.keys())
     if not remaining_keys:
         break
 
-
-
-gsheet = GSheet(SPREADSHEET_ID, SPREADSHEET_PAGE)
+for config in config_list:
+    gsheet = GSheet(config['WORKSHEET'], config['SHEET_NAME'])
+    indexes_data = {k.upper():v for k,v in indexes.items() if k in config['SYMBOLS'].split(',')}
+    insights_data = {k.upper():v for k,v in insights.items() if k in config['INSIGHTS'].split(',')}
+    gsheet.insert_table(indexes_data)
+    gsheet.insert_table(insights_data)
